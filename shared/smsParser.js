@@ -1,57 +1,81 @@
 /**
- * Parse a raw SMS body and extract payment info if it matches
- * known Pakistani payment platforms (EasyPaisa, JazzCash, Raast).
+ * smsParser.js
+ * -------------------------------------------------------
+ * PayGuard SMS Parser — the core detection engine.
  *
- * @param {string} body - Raw SMS text
- * @returns {object|null} { platform, amount, sender, timestamp } or null
+ * Parses raw incoming SMS messages and determines whether
+ * they are real payment notifications from EasyPaisa,
+ * JazzCash, or Raast. Returns a structured payment object
+ * for valid payment SMS, or null for everything else
+ * (OTPs, promos, bill reminders, junk, etc.).
+ *
+ * Used by the owner Android app to decide whether an SMS
+ * should trigger a Firestore write.
+ * -------------------------------------------------------
  */
-export function parseSMS(body) {
-  if (!body || typeof body !== 'string') return null;
 
-  const upper = body.toUpperCase();
-  let platform = null;
-
-  // ---- Detect platform ----
-  if (upper.includes('EASYPAISA') || upper.includes('EASY PAISA')) {
-    platform = 'EasyPaisa';
-  } else if (upper.includes('JAZZCASH') || upper.includes('JAZZ CASH')) {
-    platform = 'JazzCash';
-  } else if (upper.includes('RAAST')) {
-    platform = 'Raast';
+/**
+ * Parses a raw SMS string and extracts payment information.
+ *
+ * @param {string} rawSMS - The raw SMS message text.
+ * @returns {{ platform: string, amount: number, sender: string, timestamp: string } | null}
+ *   A payment object if the SMS is a valid payment notification, or null otherwise.
+ */
+function parseSMS(rawSMS) {
+  // Guard: reject falsy / non-string / empty input immediately
+  if (!rawSMS || typeof rawSMS !== "string" || rawSMS.trim() === "") {
+    return null;
   }
 
-  if (!platform) return null;
+  const sms = rawSMS.trim();
 
-  // ---- Extract amount ----
-  // Common patterns:
-  //   "Rs. 1,500.00"  "Rs 1500"  "PKR 2,000"  "Amount: Rs.500"  "received Rs1500"
-  const amountMatch = body.match(
-    /(?:Rs\.?\s*|PKR\s*|Amount[:\s]*Rs\.?\s*)([\d,]+(?:\.\d{1,2})?)/i
-  );
-
-  if (!amountMatch) return null;
-
-  const amount = parseFloat(amountMatch[1].replace(/,/g, ''));
-  if (isNaN(amount) || amount <= 0) return null;
-
-  // ---- Extract sender (best effort) ----
-  // Try patterns like "from 03001234567" or "from AHMED ALI"
-  let sender = 'Unknown';
-  const senderMatch = body.match(/from\s+([A-Za-z0-9\s]+?)(?:\s*\.|\s*$|\s+on\s|\s+via\s|\s+at\s)/i);
-  if (senderMatch) {
-    sender = senderMatch[1].trim();
-  } else {
-    // Try to find a phone number pattern
-    const phoneMatch = body.match(/(03\d{9})/);
-    if (phoneMatch) {
-      sender = phoneMatch[1];
-    }
+  // --------------------------------------------------
+  // EasyPaisa
+  // Example: "EP: Rs.1,500 received from 0312-1234567 in your Mobile Account"
+  // --------------------------------------------------
+  const easyPaisaRegex = /^EP:\s*Rs\.([\d,]+)\s+received\s+from\s+([\d-]+)\s+in\s+your\s+Mobile\s+Account$/i;
+  const epMatch = sms.match(easyPaisaRegex);
+  if (epMatch) {
+    return {
+      platform: "EasyPaisa",
+      amount: Number(epMatch[1].replace(/,/g, "")),
+      sender: epMatch[2].trim(),
+      timestamp: new Date().toISOString(),
+    };
   }
 
-  return {
-    platform,
-    amount,
-    sender,
-    timestamp: new Date().toISOString(),
-  };
+  // --------------------------------------------------
+  // JazzCash
+  // Example: "JazzCash: PKR 2,000 has been credited to your account from 0321-1111111"
+  // --------------------------------------------------
+  const jazzCashRegex = /^JazzCash:\s*PKR\s+([\d,]+)\s+has\s+been\s+credited\s+to\s+your\s+account\s+from\s+([\d-]+)$/i;
+  const jcMatch = sms.match(jazzCashRegex);
+  if (jcMatch) {
+    return {
+      platform: "JazzCash",
+      amount: Number(jcMatch[1].replace(/,/g, "")),
+      sender: jcMatch[2].trim(),
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  // --------------------------------------------------
+  // Raast
+  // Example: "Rs. 750 has been transferred to your account via Raast from HBL Bank"
+  // --------------------------------------------------
+  const raastRegex = /^Rs\.\s*([\d,]+)\s+has\s+been\s+transferred\s+to\s+your\s+account\s+via\s+Raast\s+from\s+(.+)$/i;
+  const raastMatch = sms.match(raastRegex);
+  if (raastMatch) {
+    return {
+      platform: "Raast",
+      amount: Number(raastMatch[1].replace(/,/g, "")),
+      sender: raastMatch[2].trim(),
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  // No pattern matched — not a payment SMS
+  return null;
 }
+
+export { parseSMS };

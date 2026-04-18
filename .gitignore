@@ -119,6 +119,9 @@ dist
 # Firebase cache directory
 .firebase/
 
+# Firebase config with real credentials (use firebaseConfig.example.js as template)
+shared/firebaseConfig.js
+
 # TernJS port file
 .tern-port
 
