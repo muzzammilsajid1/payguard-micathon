@@ -7,25 +7,16 @@ import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import LoginScreen from './screens/LoginScreen';
 import ShopSetupScreen from './screens/ShopSetupScreen';
 import ListeningDashboardScreen from './screens/ListeningDashboardScreen';
-import { initFirebase } from '../shared/firebaseHelpers';
+import { initializeApp, getApps } from 'firebase/app';
+import { getFirestore } from 'firebase/firestore';
 
-import {
-  FIREBASE_API_KEY,
-  FIREBASE_AUTH_DOMAIN,
-  FIREBASE_PROJECT_ID,
-  FIREBASE_STORAGE_BUCKET,
-  FIREBASE_MESSAGING_SENDER_ID,
-  FIREBASE_APP_ID,
-} from '@env';
-
-// ---------- Firebase Config from .env (via react-native-dotenv) ----------
 const firebaseConfig = {
-  apiKey: FIREBASE_API_KEY,
-  authDomain: FIREBASE_AUTH_DOMAIN,
-  projectId: FIREBASE_PROJECT_ID,
-  storageBucket: FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: FIREBASE_MESSAGING_SENDER_ID,
-  appId: FIREBASE_APP_ID,
+  apiKey: "AIzaSyCAXQ3S8vG0SlxkCVSt8tr-pPP4G74JPDY",
+  authDomain: "payguard-6b2e1.firebaseapp.com",
+  projectId: "payguard-6b2e1",
+  storageBucket: "payguard-6b2e1.firebasestorage.app",
+  messagingSenderId: "515008564050",
+  appId: "1:515008564050:web:ecb37ec41c3e804a5c088b",
 };
 
 const Stack = createStackNavigator();
@@ -36,7 +27,13 @@ export default function App() {
 
   useEffect(() => {
     // Initialize Firebase and store the Firestore instance
-    const database = initFirebase(firebaseConfig);
+    let app;
+    if (getApps().length > 0) {
+      app = getApps()[0];
+    } else {
+      app = initializeApp(firebaseConfig);
+    }
+    const database = getFirestore(app);
     setDb(database);
 
     // Watch auth state

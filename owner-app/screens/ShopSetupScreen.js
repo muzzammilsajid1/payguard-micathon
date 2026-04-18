@@ -11,7 +11,35 @@ import {
   Platform,
 } from 'react-native';
 import { getAuth } from 'firebase/auth';
-import { writeShopConfig, getShopConfig } from '../../shared/firebaseHelpers';
+import {
+  doc,
+  setDoc,
+  getDoc,
+} from 'firebase/firestore';
+
+// ---- Inlined from shared/firebaseHelpers ----
+async function writeShopConfig(db, shopId, configObj) {
+  try {
+    const configRef = doc(db, 'shops', shopId, 'config', 'main');
+    await setDoc(configRef, configObj, { merge: true });
+  } catch (error) {
+    console.error('Error writing shop config:', error);
+  }
+}
+
+async function getShopConfig(db, shopId) {
+  try {
+    const configRef = doc(db, 'shops', shopId, 'config', 'main');
+    const snap = await getDoc(configRef);
+    if (snap.exists()) {
+      return snap.data();
+    }
+    return null;
+  } catch (error) {
+    console.error('Error getting shop config:', error);
+    return null;
+  }
+}
 
 export default function ShopSetupScreen({ navigation, db }) {
   const [shopName, setShopName] = useState('');

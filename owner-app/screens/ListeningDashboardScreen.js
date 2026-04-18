@@ -12,7 +12,52 @@ import {
   StatusBar,
 } from 'react-native';
 import { startListening } from '../smsListener';
-import { writePayment, listenForPayments } from '../../shared/firebaseHelpers';
+import {
+  collection,
+  addDoc,
+  serverTimestamp,
+  query,
+  orderBy,
+  limit,
+  onSnapshot,
+} from 'firebase/firestore';
+
+// ---- Inlined from shared/firebaseHelpers ----
+async function writePayment(db, shopId, paymentObj) {
+  try {
+    const paymentsRef = collection(db, 'shops', shopId, 'payments');
+    const docRef = await addDoc(paymentsRef, {
+      ...paymentObj,
+      receivedAt: serverTimestamp(),
+    });
+    return docRef.id;
+  } catch (error) {
+    console.error('Error writing payment:', error);
+  }
+}
+
+function listenForPayments(db, shopId, callback) {
+  const paymentsRef = collection(db, 'shops', shopId, 'payments');
+  const q = query(paymentsRef, orderBy('receivedAt', 'desc'), limit(1));
+
+  const unsubscribe = onSnapshot(q, (snapshot) => {
+    snapshot.docChanges().forEach((change) => {
+      if (change.type === 'added') {
+        const data = change.doc.data();
+        callback({
+          id: change.doc.id,
+          amount: data.amount,
+          sender: data.sender || 'Unknown',
+          platform: data.platform || 'UPI',
+          timestamp: data.receivedAt?.toDate?.() || new Date(),
+          ...data,
+        });
+      }
+    });
+  });
+
+  return unsubscribe;
+}
 
 // ---------- Pulse animation hook ----------
 function usePulse() {
