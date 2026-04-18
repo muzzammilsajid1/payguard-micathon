@@ -17,9 +17,10 @@
     "android": {
       "package": "com.payguard.ownerapp",
       "permissions": [
-        "READ_SMS",
-        "RECEIVE_SMS",
-        "INTERNET"
+        "android.permission.READ_SMS",
+        "android.permission.RECEIVE_SMS",
+        "android.permission.INTERNET",
+        "android.permission.RECEIVE_BOOT_COMPLETED"
       ],
       "adaptiveIcon": {
         "backgroundColor": "#0f0f0f"
@@ -27,6 +28,11 @@
     },
     "web": {
       "bundler": "metro"
-    }
+    },
+    "plugins": [
+      [
+        "react-native-get-sms-android"
+      ]
+    ]
   }
 }

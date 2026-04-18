@@ -51,8 +51,12 @@ function PaymentConfirmed({ payment, setScreen }) {
         </p>
       </div>
 
-      <button style={styles.resetButton} onClick={() => setScreen("entry")}>
-        Reset
+      <button style={styles.resetButton} onClick={() => setScreen("waiting")}>
+        Next customer
+      </button>
+
+      <button style={styles.newShopLink} onClick={() => setScreen("entry")}>
+        Change shop
       </button>
     </div>
   );
@@ -108,7 +112,7 @@ const styles = {
   },
   resetButton: {
     position: "fixed",
-    bottom: "24px",
+    bottom: "56px",
     right: "24px",
     backgroundColor: "transparent",
     border: "1px solid #ffffff",
@@ -118,6 +122,18 @@ const styles = {
     padding: "8px 16px",
     cursor: "pointer",
     transition: "opacity 0.2s ease",
+  },
+  newShopLink: {
+    position: "fixed",
+    bottom: "24px",
+    right: "24px",
+    backgroundColor: "transparent",
+    border: "none",
+    color: "rgba(255, 255, 255, 0.65)",
+    fontSize: "12px",
+    textDecoration: "underline",
+    cursor: "pointer",
+    padding: 0,
   },
 };
 

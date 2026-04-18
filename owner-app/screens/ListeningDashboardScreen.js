@@ -151,7 +151,7 @@ export default function ListeningDashboardScreen({ route, db }) {
       {/* ---- Payment List ---- */}
       <FlatList
         data={todayPayments}
-        keyExtractor={(_, i) => String(i)}
+        keyExtractor={(item) => item.id || String(item.timestamp)}
         renderItem={renderPayment}
         ListEmptyComponent={renderEmpty}
         contentContainerStyle={

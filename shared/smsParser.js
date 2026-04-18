@@ -9,10 +9,30 @@
  * for valid payment SMS, or null for everything else
  * (OTPs, promos, bill reminders, junk, etc.).
  *
+ * Platform detection is done via keyword presence checks
+ * (no ^ / $ anchors) so the parser handles real-world SMS
+ * bodies that include extra text such as timestamps,
+ * transaction IDs, and balance information.
+ *
  * Used by the owner Android app to decide whether an SMS
  * should trigger a Firestore write.
  * -------------------------------------------------------
  */
+
+/**
+ * Extracts a numeric amount from an SMS string.
+ * Looks for the first occurrence of Rs., Rs, or PKR
+ * followed by a number (with optional commas).
+ *
+ * @param {string} sms
+ * @returns {number|null}
+ */
+function extractAmount(sms) {
+  const amountRegex = /(?:rs\.?\s*|pkr\s*)([\d,]+)/i;
+  const match = sms.match(amountRegex);
+  if (!match) return null;
+  return Number(match[1].replace(/,/g, ""));
+}
 
 /**
  * Parses a raw SMS string and extracts payment information.
@@ -28,53 +48,89 @@ function parseSMS(rawSMS) {
   }
 
   const sms = rawSMS.trim();
+  const smsLower = sms.toLowerCase();
 
   // --------------------------------------------------
   // EasyPaisa
-  // Example: "EP: Rs.1,500 received from 0312-1234567 in your Mobile Account"
+  // Triggered when SMS contains "easypaisa" or starts with "EP:"
+  //
+  // Real example:
+  //   "Dear Customer, Rs.1,500 has been credited to your Easypaisa Account
+  //    03XX-XXXXXXX from 03XX-XXXXXXX on 18/04/2026 at 14:30. TxnID: EP123456789."
   // --------------------------------------------------
-  const easyPaisaRegex = /^EP:\s*Rs\.([\d,]+)\s+received\s+from\s+([\d-]+)\s+in\s+your\s+Mobile\s+Account$/i;
-  const epMatch = sms.match(easyPaisaRegex);
-  if (epMatch) {
+  if (smsLower.includes("easypaisa") || sms.startsWith("EP:")) {
+    const amount = extractAmount(sms);
+    if (amount === null) return null;
+
+    // Extract sender: phone number appearing after "from"
+    const senderRegex = /rs\.?\s*[\d,]+.*?from\s+([\d-]+)/i;
+    const senderMatch = sms.match(senderRegex);
+    const sender = senderMatch ? senderMatch[1].trim() : "Unknown";
+
     return {
       platform: "EasyPaisa",
-      amount: Number(epMatch[1].replace(/,/g, "")),
-      sender: epMatch[2].trim(),
+      amount,
+      sender,
       timestamp: new Date().toISOString(),
     };
   }
 
   // --------------------------------------------------
   // JazzCash
-  // Example: "JazzCash: PKR 2,000 has been credited to your account from 0321-1111111"
+  // Triggered when SMS contains "jazzcash"
+  //
+  // Real example:
+  //   "JazzCash: PKR 2,000 has been credited to your JazzCash Account from
+  //    0321-XXXXXXX. Fee: Rs.0. Available Balance: Rs.4,500. TxnID: JC123456789."
   // --------------------------------------------------
-  const jazzCashRegex = /^JazzCash:\s*PKR\s+([\d,]+)\s+has\s+been\s+credited\s+to\s+your\s+account\s+from\s+([\d-]+)$/i;
-  const jcMatch = sms.match(jazzCashRegex);
-  if (jcMatch) {
+  if (smsLower.includes("jazzcash")) {
+    // Prefer PKR amount; fall back to any Rs. amount
+    const pkrRegex = /pkr\s*([\d,]+)/i;
+    const pkrMatch = sms.match(pkrRegex);
+    const amount = pkrMatch
+      ? Number(pkrMatch[1].replace(/,/g, ""))
+      : extractAmount(sms);
+    if (amount === null) return null;
+
+    // Extract sender: phone number appearing after "from"
+    const senderRegex = /from\s+([\d-]+)/i;
+    const senderMatch = sms.match(senderRegex);
+    const sender = senderMatch ? senderMatch[1].trim() : "Unknown";
+
     return {
       platform: "JazzCash",
-      amount: Number(jcMatch[1].replace(/,/g, "")),
-      sender: jcMatch[2].trim(),
+      amount,
+      sender,
       timestamp: new Date().toISOString(),
     };
   }
 
   // --------------------------------------------------
   // Raast
-  // Example: "Rs. 750 has been transferred to your account via Raast from HBL Bank"
+  // Triggered when SMS contains "raast"
+  //
+  // Real example:
+  //   "Rs. 750 has been transferred to your account via Raast from HBL Bank.
+  //    Your account balance is Rs. 3,250. Date: 18-Apr-2026."
   // --------------------------------------------------
-  const raastRegex = /^Rs\.\s*([\d,]+)\s+has\s+been\s+transferred\s+to\s+your\s+account\s+via\s+Raast\s+from\s+(.+)$/i;
-  const raastMatch = sms.match(raastRegex);
-  if (raastMatch) {
+  if (smsLower.includes("raast")) {
+    const amount = extractAmount(sms);
+    if (amount === null) return null;
+
+    // Extract sender: everything after "from" up to a sentence boundary (. or end)
+    const senderRegex = /raast\s+from\s+([^.]+)/i;
+    const senderMatch = sms.match(senderRegex);
+    const sender = senderMatch ? senderMatch[1].trim() : "Unknown";
+
     return {
       platform: "Raast",
-      amount: Number(raastMatch[1].replace(/,/g, "")),
-      sender: raastMatch[2].trim(),
+      amount,
+      sender,
       timestamp: new Date().toISOString(),
     };
   }
 
-  // No pattern matched — not a payment SMS
+  // No platform matched — not a payment SMS
   return null;
 }
 

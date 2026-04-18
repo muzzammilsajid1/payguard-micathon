@@ -5,10 +5,29 @@ import WaitingState from "./components/WaitingState";
 import PaymentConfirmed from "./components/PaymentConfirmed";
 import TimeoutWarning from "./components/TimeoutWarning";
 
+// -------------------------------------------------------
+// Inject spin keyframe for the DB-ready loading spinner.
+// Same pattern as ShopCodeEntry.jsx and WaitingState.jsx.
+// -------------------------------------------------------
+const spinKeyframes = `
+  @keyframes spin {
+    0%   { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+`;
+
+if (typeof document !== "undefined") {
+  const styleEl = document.createElement("style");
+  styleEl.textContent = spinKeyframes;
+  document.head.appendChild(styleEl);
+}
+
 function App() {
   const [screen, setScreen] = useState("entry");
   const [shopId, setShopId] = useState(null);
   const [payment, setPayment] = useState(null);
+  // Guards against passing db={null} to child components before Firebase is ready
+  const [dbReady, setDbReady] = useState(false);
   const dbRef = useRef(null);
 
   useEffect(() => {
@@ -23,7 +42,37 @@ function App() {
 
     const db = initFirebase(firebaseConfig);
     dbRef.current = db;
+    // Signal that db is ready — re-render will now show screens with a valid db
+    setDbReady(true);
   }, []);
+
+  // Block all screen rendering until Firebase is initialized.
+  // In practice this is one frame, but it closes the race condition entirely.
+  if (!dbReady) {
+    return (
+      <div
+        style={{
+          width: "100%",
+          height: "100%",
+          backgroundColor: "#1a1a1a",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <div
+          style={{
+            width: "32px",
+            height: "32px",
+            border: "3px solid #333",
+            borderTopColor: "#00C853",
+            borderRadius: "50%",
+            animation: "spin 0.8s linear infinite",
+          }}
+        />
+      </div>
+    );
+  }
 
   if (screen === "entry") {
     return (
