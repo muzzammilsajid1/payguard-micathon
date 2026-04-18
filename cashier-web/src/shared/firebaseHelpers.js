@@ -184,20 +184,27 @@ export async function getShopConfig(db, shopId) {
  */
 export async function getShopByCode(db, cashierCode) {
   try {
+    console.log("Looking for code:", cashierCode);
     const shopsSnapshot = await getDocs(collection(db, "shops"));
+    console.log("Total shops found:", shopsSnapshot.docs.length);
 
     for (const shopDoc of shopsSnapshot.docs) {
+      console.log("Checking shop:", shopDoc.id);
       const configRef = doc(db, "shops", shopDoc.id, "config", "main");
       const configSnap = await getDoc(configRef);
 
       if (configSnap.exists()) {
         const data = configSnap.data();
+        console.log("Shop config data:", data);
         if (data.cashierCode === cashierCode) {
           return shopDoc.id;
         }
+      } else {
+        console.log("No config found for shop:", shopDoc.id);
       }
     }
 
+    console.log("No matching shop found for code:", cashierCode);
     return null;
   } catch (error) {
     console.error("Error getting shop by code:", error);
