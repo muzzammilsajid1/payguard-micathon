@@ -1,0 +1,32 @@
+{
+  "expo": {
+    "name": "PayGuard",
+    "slug": "payguard-owner",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "backgroundColor": "#0f0f0f",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "backgroundColor": "#0f0f0f",
+      "resizeMode": "contain"
+    },
+    "ios": {
+      "supportsTablet": false
+    },
+    "android": {
+      "package": "com.payguard.ownerapp",
+      "permissions": [
+        "READ_SMS",
+        "RECEIVE_SMS",
+        "INTERNET"
+      ],
+      "adaptiveIcon": {
+        "backgroundColor": "#0f0f0f"
+      }
+    },
+    "web": {
+      "bundler": "metro"
+    }
+  }
+}
