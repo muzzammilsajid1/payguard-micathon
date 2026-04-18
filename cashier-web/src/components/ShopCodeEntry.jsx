@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { getShopByCode } from "../../../shared/firebaseHelpers";
+import { getShopByCode } from "../shared/firebaseHelpers";
 
 function ShopCodeEntry({ db, setScreen, setShopId }) {
   const [code, setCode] = useState("");

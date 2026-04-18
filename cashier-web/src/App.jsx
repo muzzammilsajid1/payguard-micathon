@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { initFirebase } from "../../shared/firebaseHelpers";
+import { initFirebase } from "./shared/firebaseHelpers";
 import ShopCodeEntry from "./components/ShopCodeEntry";
 import WaitingState from "./components/WaitingState";
 import PaymentConfirmed from "./components/PaymentConfirmed";

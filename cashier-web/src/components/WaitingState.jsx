@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { listenForPayments, getShopConfig } from "../../../shared/firebaseHelpers";
+import { listenForPayments, getShopConfig } from "../shared/firebaseHelpers";
 
 // -------------------------------------------------------
 // Inject pulse keyframes into the document head.
