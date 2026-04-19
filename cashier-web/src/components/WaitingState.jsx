@@ -23,25 +23,29 @@ if (typeof document !== "undefined") {
   document.head.appendChild(styleEl);
 }
 
-function WaitingState({ db, shopId, setScreen, setPayment }) {
+function WaitingState({ shopId, setScreen, setPayment }) {
   const [shopName, setShopName] = useState("");
   const unsubscribeRef = useRef(null);
   const timerRef = useRef(null);
 
   useEffect(() => {
-    // Fetch human-readable shop name to avoid showing raw Firebase UID
-    getShopConfig(db, shopId).then((config) => {
+    getShopConfig(shopId).then((config) => {
       if (config?.shopName) setShopName(config.shopName);
     });
 
-    // Start listening for payments
-    const unsubscribe = listenForPayments(db, shopId, (paymentData) => {
-      setPayment(paymentData);
-      setScreen("confirmed");
+    const connectedAt = new Date();
+
+    const unsubscribe = listenForPayments(shopId, (paymentData) => {
+      const paymentTime = paymentData.timestamp instanceof Date
+        ? paymentData.timestamp
+        : new Date(paymentData.timestamp);
+      if (paymentTime > connectedAt) {
+        setPayment(paymentData);
+        setScreen("confirmed");
+      }
     });
     unsubscribeRef.current = unsubscribe;
 
-    // Start 120-second timeout countdown
     const startTime = Date.now();
     const intervalId = setInterval(() => {
       if (Date.now() - startTime >= 120000) {
@@ -50,16 +54,11 @@ function WaitingState({ db, shopId, setScreen, setPayment }) {
     }, 1000);
     timerRef.current = intervalId;
 
-    // Cleanup on unmount
     return () => {
-      if (unsubscribeRef.current) {
-        unsubscribeRef.current();
-      }
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-      }
+      if (unsubscribeRef.current) unsubscribeRef.current();
+      if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [db, shopId, setScreen, setPayment]);
+  }, [shopId, setScreen, setPayment]);
 
   return (
     <div style={styles.container}>

@@ -8,21 +8,43 @@ import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 function parseSMS(sms) {
   if (!sms || typeof sms !== 'string' || sms.trim() === '') return null;
   const s = sms.trim();
+
   if (s.toLowerCase().includes('easypaisa') || s.startsWith('EP:')) {
-    const match = s.match(/rs\.?\s*([\d,]+)/i);
-    const sender = s.match(/from\s+([\d-]+)/i);
-    if (match) return { platform: 'EasyPaisa', amount: Number(match[1].replace(/,/g, '')), sender: sender?.[1] || 'Unknown', timestamp: new Date().toISOString() };
+    const amountMatch = s.match(/rs\.?\s*([\d,]+(?:\.\d+)?)/i);
+    const senderMatch = s.match(/from\s+([A-Za-z\s]+?)(?:\s*,|\s*A\/C|\s*on|\s*\.|$)/i) ||
+                        s.match(/from\s+([\d-]+)/i);
+    if (amountMatch) return {
+      platform: 'EasyPaisa',
+      amount: Number(amountMatch[1].replace(/,/g, '')),
+      sender: senderMatch?.[1]?.trim() || 'Unknown',
+      timestamp: new Date().toISOString()
+    };
   }
+
   if (s.toLowerCase().includes('jazzcash')) {
-    const match = s.match(/(?:pkr|rs\.?)\s*([\d,]+)/i);
-    const sender = s.match(/from\s+([\d-]+)/i);
-    if (match) return { platform: 'JazzCash', amount: Number(match[1].replace(/,/g, '')), sender: sender?.[1] || 'Unknown', timestamp: new Date().toISOString() };
+    const amountMatch = s.match(/(?:pkr|rs\.?)\s*([\d,]+(?:\.\d+)?)/i);
+    const senderMatch = s.match(/from\s+([A-Za-z\s]+?)(?:\s*,|\s*A\/C|\s*on|\s*\.|$)/i) ||
+                        s.match(/from\s+([\d-]+)/i);
+    if (amountMatch) return {
+      platform: 'JazzCash',
+      amount: Number(amountMatch[1].replace(/,/g, '')),
+      sender: senderMatch?.[1]?.trim() || 'Unknown',
+      timestamp: new Date().toISOString()
+    };
   }
+
   if (s.toLowerCase().includes('raast')) {
-    const match = s.match(/rs\.?\s*([\d,]+)/i);
-    const sender = s.match(/from\s+(.+?)(?:\.|$)/i);
-    if (match) return { platform: 'Raast', amount: Number(match[1].replace(/,/g, '')), sender: sender?.[1] || 'Unknown', timestamp: new Date().toISOString() };
+    const amountMatch = s.match(/rs\.?\s*([\d,]+(?:\.\d+)?)/i);
+    const senderMatch = s.match(/from\s+([A-Za-z\s]+?)(?:\s*,|\s*A\/C|\s*on|\s*\.|$)/i) ||
+                        s.match(/from\s+(.+?)(?:\.|$)/i);
+    if (amountMatch) return {
+      platform: 'Raast',
+      amount: Number(amountMatch[1].replace(/,/g, '')),
+      sender: senderMatch?.[1]?.trim() || 'Unknown',
+      timestamp: new Date().toISOString()
+    };
   }
+
   return null;
 }
 
@@ -49,7 +71,7 @@ export function startListening(db, shopId) {
     return { stop: () => {} };
   }
 
-  const { default: SmsAndroid } = require('react-native-get-sms-android');
+  const SmsAndroid = require('react-native-get-sms-android').default || require('react-native-get-sms-android');
   const { PermissionsAndroid } = require('react-native');
 
   let intervalId = null;
@@ -90,6 +112,11 @@ export function startListening(db, shopId) {
             try {
               const messages = JSON.parse(smsList);
               messages.forEach((sms) => {
+                const address = sms.address || '';
+                const digitsOnly = address.replace(/\D/g, '');
+                if (digitsOnly.length >= 10) {
+                  return;
+                }
                 const result = parseSMS(sms.body || '');
                 if (result !== null) {
                   writePayment(db, shopId, result);

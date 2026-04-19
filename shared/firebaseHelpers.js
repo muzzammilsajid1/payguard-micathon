@@ -137,6 +137,11 @@ export function listenForPayments(db, shopId, callback) {
  */
 export async function writeShopConfig(db, shopId, configObj) {
   try {
+    // Write to the parent shop document so it appears in collection queries
+    const shopRef = doc(db, "shops", shopId);
+    await setDoc(shopRef, { shopId: shopId }, { merge: true });
+
+    // Write config to subcollection
     const configRef = doc(db, "shops", shopId, "config", "main");
     await setDoc(configRef, configObj, { merge: true });
   } catch (error) {

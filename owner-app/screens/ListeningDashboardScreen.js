@@ -21,6 +21,7 @@ import {
   limit,
   onSnapshot,
 } from 'firebase/firestore';
+import { getAuth } from 'firebase/auth';
 
 // ---- Inlined from shared/firebaseHelpers ----
 async function writePayment(db, shopId, paymentObj) {
@@ -110,7 +111,17 @@ function formatAmount(amount) {
 // ---------- Main Screen ----------
 export default function ListeningDashboardScreen({ route, db }) {
   const shopName = route?.params?.shopName || 'My Shop';
-  const shopId = route?.params?.shopId || '';
+  const [shopId, setShopId] = React.useState(route?.params?.shopId || '');
+
+  React.useEffect(() => {
+    if (!shopId) {
+      const auth = getAuth();
+      const user = auth.currentUser;
+      if (user) {
+        setShopId(user.uid);
+      }
+    }
+  }, []);
 
   const [payments, setPayments] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
@@ -141,6 +152,7 @@ export default function ListeningDashboardScreen({ route, db }) {
   // ---- Manual payment handler ----
   const handleManualConfirm = async () => {
     if (!manualAmount.trim()) return;
+    console.log("shopId at manual confirm:", shopId);
     try {
       await writePayment(db, shopId, {
         platform: manualPlatform,
