@@ -1,6 +1,10 @@
 # PayGuard
+[![Pitch Deck](https://img.shields.io/badge/Pitch_Deck-View_Slides-blue?style=for-the-badge)](./slides/PayGuard.pptx)
 
 PayGuard is a cross-platform system designed to protect shop owners from fake payment screenshot scams. By capturing real-time SMS notifications for mobile wallets and banking apps on the owner's device, PayGuard instantly verifies transactions and syncs the confirmation to the cashier's web terminal.
+
+## 🔗 Quick Links
+- [**Pitch Deck / Presentation Slides**](./slides/PayGuard.pptx)
 
 ## 🚀 Features
 
@@ -23,9 +27,6 @@ PayGuard is a cross-platform system designed to protect shop owners from fake pa
    - Built with React.
    - Listens to Firebase firestore hooks in real-time.
    - Employs a zero-interaction design: Cashiers simply wait for the `PaymentConfirmed` screen to blink green. Includes auto-timeout logic (120 seconds).
-
-3. **Presentation Materials (`/slides`)**:
-   - Contains project presentation slides, pitch decks, and visual assets for the micathon.
 
 ## 🛠️ Tech Stack
 
