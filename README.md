@@ -1,10 +1,11 @@
 # PayGuard
-[![Pitch Deck](https://img.shields.io/badge/Pitch_Deck-View_Slides-blue?style=for-the-badge)](./slides/PayGuard.pptx)
+[![Pitch Deck](https://img.shields.io/badge/Pitch_Deck-View_Slides-blue?style=for-the-badge)](https://docs.google.com/presentation/d/1w7knpUCGTBa73NNAcEj3hRZ7bKWozAj5/edit?usp=sharing&ouid=102886201880625567533&rtpof=true&sd=true)
 
 PayGuard is a cross-platform system designed to protect shop owners from fake payment screenshot scams. By capturing real-time SMS notifications for mobile wallets and banking apps on the owner's device, PayGuard instantly verifies transactions and syncs the confirmation to the cashier's web terminal.
 
 ## 🔗 Quick Links
-- [**Pitch Deck / Presentation Slides**](./slides/PayGuard.pptx)
+- [**Pitch Deck / Presentation Slides (Google Drive)**](https://docs.google.com/presentation/d/1w7knpUCGTBa73NNAcEj3hRZ7bKWozAj5/edit?usp=sharing&ouid=102886201880625567533&rtpof=true&sd=true)
+- [**Pitch Deck / Presentation Slides (Local PPTX)**](./slides/PayGuard.pptx)
 
 ## 🚀 Features
 
